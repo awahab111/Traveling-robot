@@ -2,11 +2,15 @@
 #include <vector>
 #include <cstring>
 #include <climits>
+#include <fstream>
+#include <sstream>
+#include <string>
+#include <vector>
 
 using namespace std;
 
 const int n = 4;
-const int MAX = 1;
+const int MAX = 38;
 int dist[n + 1][n + 1] = {
 {0 ,0 , 0 , 0 , 0 },
 {0 ,0 , 2 , 2 , 3 },
@@ -17,7 +21,142 @@ int memo[n + 1][1 << (n + 1)];
 int fun(int i, int mask);
 
 void readfile(){
-    
+	ifstream fin("input.txt");
+	string vertex[128], line, edge[128],w;
+	int vertex_count = 0, edge_count = 0, **adj_matrix , *weights, *vertex_time;
+	char v, e, delimiter;
+
+	//getting vertices
+	getline(fin, line);
+	stringstream iss(line);	
+	while (iss >> v)
+	{
+		if (v == 'V' || v == ' ' || v == '=' || v == '{' ||v == '}'|| v == ','){continue;}
+		else{
+			vertex[vertex_count] = v;
+			vertex_count++;
+		}
+	}
+
+	for (int i = 0; i < vertex_count; i++)
+	{
+		cout << vertex[i] << " ";
+	}
+	cout << endl;
+	//getting edges
+	getline(fin, line);
+	stringstream iss2(line);
+	while (iss2 >> e)
+	{
+		if (e == 'E' || e == ' ' || e == '=' || e == '{' ||e == '}'|| e == ','|| e == '(' ||e == ')'){continue;}
+		else{
+			edge[edge_count] = e;
+			edge_count++;
+		}
+	}
+
+	for (int i = 0; i < edge_count; i++)
+	{
+		cout << edge[i] << " ";
+	}
+	cout << endl;
+	
+	// making Matrix
+	adj_matrix = new int*[vertex_count + 1 ];
+	for (int i = 0; i < vertex_count + 1; i++){
+		adj_matrix[i] = new int[vertex_count + 1];
+		for (int j = 0; j < vertex_count + 1; j++){
+			adj_matrix[i][j] = 0;
+		}
+	}
+
+	// Extract the weights from the file
+	weights = new int[edge_count/2];
+	getline(fin, line);
+	stringstream iss3(line);
+	while (iss3 >> w)
+	{
+		if (w == "Weights" || w == " " || w == "=" || w == "{" ||w == "}"|| w == ","){continue;}
+		else{
+			int i = 0;
+			w = w.substr(9, w.size()-2);
+			stringstream ss(w);
+			int num;
+			while (ss >> num) {
+				weights[i] = num;
+				ss >> delimiter; // Read and discard the comma delimiter
+				i++;
+			}
+		}
+	}
+
+    // Update the adjacency matrix with the weights from the edges
+    for (int i = 0; i < edge_count; i += 2) {
+        string from_vertex = edge[i];
+        string to_vertex = edge[i+1];
+        int weight = weights[i/2];
+        int from_index = -1, to_index = -1;
+
+        // Find the indices of the vertices in the vertex array
+        for (int j = 0; j < edge_count; j++) {
+            if (vertex[j] == from_vertex) {
+                from_index = j;
+            }
+            if (vertex[j] == to_vertex) {
+                to_index = j;
+            }
+        }
+
+        // Update the adjacency matrix with the weight of the edge
+        if (from_index != -1 && to_index != -1) {
+            adj_matrix[from_index + 1][to_index + 1] = weight;
+            adj_matrix[to_index + 1][from_index + 1] = weight; 
+        }
+    }
+
+    // Print the adjacency matrix
+    for (int i = 0; i < vertex_count + 1; i++) {
+        for (int j = 0; j < vertex_count + 1; j++) {
+            cout << adj_matrix[i][j] << " ";
+        }
+        cout << endl;
+    }
+
+	getline(fin, line);
+	string number_string;
+    int number, i = 0;
+    bool number_found = false;
+	vertex_time = new int[vertex_count - 1];
+    for (char c : line) {
+        if (isdigit(c)) {
+            number_string += c;
+            number_found = true;
+        } 
+		else if (number_found) {
+            number = stoi(number_string);
+            vertex_time[i] = number;
+			i++;
+            number_string.clear();
+            number_found = false;
+        }
+    }
+
+    if (number_found) {
+        number = stoi(number_string);
+		vertex_time[i] = number;
+    }
+
+	for (int i = 0; i < 3; i++)
+	{
+		cout << vertex_time[i] << " ";
+	}
+	cout << endl;
+	
+	getline(fin, line);
+	size_t equal_pos = line.find("=");
+    string time = line.substr(equal_pos+1);
+    int T_time = stoi(time);
+	cout << T_time << endl;
 }
 
 
