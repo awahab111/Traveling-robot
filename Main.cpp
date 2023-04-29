@@ -9,21 +9,21 @@
 
 using namespace std;
 
-const int n = 4;
-const int MAX = 38;
-int dist[n + 1][n + 1] = {
-{0 ,0 , 0 , 0 , 0 },
-{0 ,0 , 2 , 2 , 3 },
-{0 ,2 , 0 , 4 , 5 },
-{0 ,2 , 4 , 0 , 8 },
-{0 ,3 , 5 , 8 , 0 }};
-int memo[n + 1][1 << (n + 1)];
-int fun(int i, int mask);
+// const int n = 4;
+// const int MAX = 38;
+// int dist[n + 1][n + 1] = {
+// {0 ,0 , 0 , 0 , 0 },
+// {0 ,0 , 2 , 2 , 3 },
+// {0 ,2 , 0 , 4 , 5 },
+// {0 ,2 , 4 , 0 , 8 },
+// {0 ,3 , 5 , 8 , 0 }};
+// int memo[n + 1][1 << (n + 1)];
+int fun(int i, int mask, int **dist, int T_time, int **memo , int vertex_count);
 
-void readfile(){
-	ifstream fin("input.txt");
+void readfile(int **&adj_matrix, int &vertex_count, int *&vertex_time, int &T_time){
+	ifstream fin("test_2.txt");
 	string vertex[128], line, edge[128],w;
-	int vertex_count = 0, edge_count = 0, **adj_matrix , *weights, *vertex_time;
+	int edge_count = 0, *weights;
 	char v, e, delimiter;
 
 	//getting vertices
@@ -38,11 +38,6 @@ void readfile(){
 		}
 	}
 
-	for (int i = 0; i < vertex_count; i++)
-	{
-		cout << vertex[i] << " ";
-	}
-	cout << endl;
 	//getting edges
 	getline(fin, line);
 	stringstream iss2(line);
@@ -55,12 +50,6 @@ void readfile(){
 		}
 	}
 
-	for (int i = 0; i < edge_count; i++)
-	{
-		cout << edge[i] << " ";
-	}
-	cout << endl;
-	
 	// making Matrix
 	adj_matrix = new int*[vertex_count + 1 ];
 	for (int i = 0; i < vertex_count + 1; i++){
@@ -114,14 +103,6 @@ void readfile(){
         }
     }
 
-    // Print the adjacency matrix
-    for (int i = 0; i < vertex_count + 1; i++) {
-        for (int j = 0; j < vertex_count + 1; j++) {
-            cout << adj_matrix[i][j] << " ";
-        }
-        cout << endl;
-    }
-
 	getline(fin, line);
 	string number_string;
     int number, i = 0;
@@ -146,22 +127,17 @@ void readfile(){
 		vertex_time[i] = number;
     }
 
-	for (int i = 0; i < 3; i++)
-	{
-		cout << vertex_time[i] << " ";
-	}
-	cout << endl;
+	
 	
 	getline(fin, line);
 	size_t equal_pos = line.find("=");
     string time = line.substr(equal_pos+1);
-    int T_time = stoi(time);
-	cout << T_time << endl;
+    T_time = stoi(time);
 }
 
 
 // Helper function to print path
-void printPath(int i, int mask, vector<int> &path)
+void printPath(int i, int mask, vector<int> &path, int ** adj_matrix, int T_time, int **memo, int vertex_count)
 {
     // Base case
     if (mask == ((1 << i) | 3))
@@ -171,14 +147,14 @@ void printPath(int i, int mask, vector<int> &path)
     }
 
     // Recursion
-    for (int j = 1; j <= n; j++)
+    for (int j = 1; j <= vertex_count; j++)
     {
         if ((mask & (1 << j)) && j != i && j != 1)
         {
-            int subproblem = fun(j, mask & (~(1 << i))) + dist[j][i];
+            int subproblem = fun(j, mask & (~(1 << i)), adj_matrix, T_time, memo, vertex_count) + adj_matrix[j][i];
             if (memo[i][mask] == subproblem)
             {
-                printPath(j, mask & (~(1 << i)), path);
+                printPath(j, mask & (~(1 << i)), path, adj_matrix, T_time, memo, vertex_count);
                 path.push_back(i);
                 return;
             }
@@ -186,19 +162,19 @@ void printPath(int i, int mask, vector<int> &path)
     }
 }
 
-int fun(int i, int mask)
+int fun(int i, int mask, int **dist, int T_time, int **memo, int vertex_count)
 {
     if (mask == ((1 << i) | 3))
         return dist[1][i];
     if (memo[i][mask] != 0)
         return memo[i][mask];
 
-    int res = MAX;
-    for (int j = 1; j <= n; j++)
+    int res = T_time;
+    for (int j = 1; j <= vertex_count; j++)
     {
         if ((mask & (1 << j)) && j != i && j != 1)
         {
-            int subproblem = fun(j, mask & (~(1 << i))) + dist[j][i];
+            int subproblem = fun(j, mask & (~(1 << i)), dist, T_time, memo, vertex_count) + dist[j][i];
             res = min(res, subproblem);
         }
     }
@@ -209,26 +185,48 @@ int fun(int i, int mask)
 
 int main()
 {
-    int ans = MAX;
-    for (int i = 1; i <= n; i++)
+    int **adj_matrix , vertex_count = 0, *vertex_time, T_time, delivery_time = 0;
+    readfile(adj_matrix, vertex_count, vertex_time, T_time);
+    
+
+
+    //Intialize memoization table 
+    int **memo = new int* [vertex_count + 1];
+    for (int i = 0; i < vertex_count + 1; i++){
+        memo[i] = new int[(1 << (vertex_count + 1))];
+        for (int j = 0; j < (1 << (vertex_count + 1)); j++){memo[i][j] = 0;}
+    }
+    
+    int cost = T_time;
+    for (int i = 1; i <= vertex_count; i++)
     {
-        int subproblem = fun(i, (1 << (n + 1)) - 1) + dist[i][1];
-        if (subproblem < ans)
-            ans = subproblem;
+        int subproblem = fun(i, (1 << (vertex_count + 1)) - 1, adj_matrix, T_time, memo , vertex_count) + adj_matrix[i][1];
+        if (subproblem < cost)
+            cost = subproblem;
     }
 
-    vector<int> path;
-    for (int i = 1; i <= n; i++)
+    for (int i = 0; i < vertex_count - 1; i++){delivery_time += vertex_time[i];}
+
+    if ((delivery_time + cost)> T_time)
     {
-        int subproblem = fun(i, (1 << (n + 1)) - 1) + dist[i][1];
-        if (subproblem == ans)
+        cout << "NO FEASIBLE CIRCUIT" << endl;
+        return 0;
+    }
+
+    
+
+    vector<int> path;
+    for (int i = 1; i <= vertex_count; i++)
+    {
+        int subproblem = fun(i, (1 << (vertex_count + 1)) - 1, adj_matrix, T_time ,memo , vertex_count) + adj_matrix[i][1];
+        if (subproblem == cost)
         {
-            printPath(i, (1 << (n + 1)) - 1, path);
+            printPath(i, (1 << (vertex_count + 1)) - 1, path, adj_matrix, T_time, memo , vertex_count);
             break;
         }
     }
 
-    cout << "The cost of most efficient tour = " << ans << endl;
+    cout << "The cost of most efficient tour = " << cost << endl;
     cout << "Path: ";
     cout << "1" << " -> ";
     for (int i = path.size() - 1; i >= 0; i--)
