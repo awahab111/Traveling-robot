@@ -9,23 +9,12 @@
 
 using namespace std;
 
-// const int n = 4;
-// const int MAX = 38;
-// int dist[n + 1][n + 1] = {
-// {0 ,0 , 0 , 0 , 0 },
-// {0 ,0 , 2 , 2 , 3 },
-// {0 ,2 , 0 , 4 , 5 },
-// {0 ,2 , 4 , 0 , 8 },
-// {0 ,3 , 5 , 8 , 0 }};
-// int memo[n + 1][1 << (n + 1)];
-int fun(int i, int mask, int **dist, int T_time, int **memo , int vertex_count);
-
-void readfile(int **&adj_matrix, int &vertex_count, int *&vertex_time, int &T_time){
-	ifstream fin("test_2.txt");
-	string vertex[128], line, edge[128],w;
+void readfile(int **&adj_matrix, int &vertex_count, int *&vertex_time, int &T_time, string *&vertex, string file){
+	ifstream fin(file);
+	string line, edge[128],w;
 	int edge_count = 0, *weights;
 	char v, e, delimiter;
-
+    vertex = new string[128];
 	//getting vertices
 	getline(fin, line);
 	stringstream iss(line);	
@@ -135,107 +124,86 @@ void readfile(int **&adj_matrix, int &vertex_count, int *&vertex_time, int &T_ti
     T_time = stoi(time);
 }
 
-
-// Helper function to print path
-void printPath(int i, int mask, vector<int> &path, int ** adj_matrix, int T_time, int **memo, int vertex_count)
+int hamiltonianCycle(int i, int mask, int **adj_matrix, int T_time, int **memoization_table, int vertex_count, int number, vector<int> *&path)
 {
-    // Base case
-    if (mask == ((1 << i) | 3))
-    {
-        path.push_back(i);
-        return;
+    if (mask == ((1 << i) | 3)){
+        path[number].push_back(1);
+        path[number].push_back(i);
+        return adj_matrix[1][i];
     }
-
-    // Recursion
-    for (int j = 1; j <= vertex_count; j++)
-    {
-        if ((mask & (1 << j)) && j != i && j != 1)
-        {
-            int subproblem = fun(j, mask & (~(1 << i)), adj_matrix, T_time, memo, vertex_count) + adj_matrix[j][i];
-            if (memo[i][mask] == subproblem)
-            {
-                printPath(j, mask & (~(1 << i)), path, adj_matrix, T_time, memo, vertex_count);
-                path.push_back(i);
-                return;
-            }
-        }
+    if (memoization_table[i][mask] != 0){
+        return memoization_table[i][mask];
     }
-}
-
-int fun(int i, int mask, int **dist, int T_time, int **memo, int vertex_count)
-{
-    if (mask == ((1 << i) | 3))
-        return dist[1][i];
-    if (memo[i][mask] != 0)
-        return memo[i][mask];
-
     int res = T_time;
     for (int j = 1; j <= vertex_count; j++)
     {
         if ((mask & (1 << j)) && j != i && j != 1)
         {
-            int subproblem = fun(j, mask & (~(1 << i)), dist, T_time, memo, vertex_count) + dist[j][i];
-            res = min(res, subproblem);
+            int subproblem = hamiltonianCycle(j, mask & (~(1 << i)), adj_matrix, T_time, memoization_table, vertex_count, number , path) + adj_matrix[j][i];
+            if (subproblem < res){
+                res = subproblem;
+                path[number].push_back(i);  // Add the current vertex to the path vector.
+                return res;
+            }
         }
     }
-
-    memo[i][mask] = res;
+    memoization_table[i][mask] = res;
     return res;
 }
 
-int main()
-{
+// Calling Funtion
+void FindPath(string file){
     int **adj_matrix , vertex_count = 0, *vertex_time, T_time, delivery_time = 0;
-    readfile(adj_matrix, vertex_count, vertex_time, T_time);
-    
-
+    string *vertex;
+    readfile(adj_matrix, vertex_count, vertex_time, T_time,vertex, file);
+    vector<int>* path = new vector<int> [vertex_count + 1]; 
 
     //Intialize memoization table 
-    int **memo = new int* [vertex_count + 1];
+    int **memoization_table = new int* [vertex_count + 1];
     for (int i = 0; i < vertex_count + 1; i++){
-        memo[i] = new int[(1 << (vertex_count + 1))];
-        for (int j = 0; j < (1 << (vertex_count + 1)); j++){memo[i][j] = 0;}
+        memoization_table[i] = new int[(1 << (vertex_count + 1))];
+        for (int j = 0; j < (1 << (vertex_count + 1)); j++){memoization_table[i][j] = 0;}
     }
     
+    // Find the traveling cost
+    int burh = 0;
     int cost = T_time;
     for (int i = 1; i <= vertex_count; i++)
     {
-        int subproblem = fun(i, (1 << (vertex_count + 1)) - 1, adj_matrix, T_time, memo , vertex_count) + adj_matrix[i][1];
+        int subproblem = hamiltonianCycle(i, (1 << (vertex_count + 1)) - 1, adj_matrix, T_time, memoization_table , vertex_count, i, path) + adj_matrix[i][1];
         if (subproblem < cost)
             cost = subproblem;
+            burh = i;
     }
-
-    for (int i = 0; i < vertex_count - 1; i++){delivery_time += vertex_time[i];}
+    // Find the delivery time
+    for(int i = 0; i < vertex_count - 1; i++){delivery_time += vertex_time[i];}
 
     if ((delivery_time + cost)> T_time)
     {
         cout << "NO FEASIBLE CIRCUIT" << endl;
-        return 0;
+        return;
     }
 
-    
-
-    vector<int> path;
-    for (int i = 1; i <= vertex_count; i++)
+    cout << "Expected output: (";
+    cout << "h" << ",";
+    for (int i = 1; i <= path[burh].size() - 1; i++)
     {
-        int subproblem = fun(i, (1 << (vertex_count + 1)) - 1, adj_matrix, T_time ,memo , vertex_count) + adj_matrix[i][1];
-        if (subproblem == cost)
-        {
-            printPath(i, (1 << (vertex_count + 1)) - 1, path, adj_matrix, T_time, memo , vertex_count);
-            break;
-        }
+        cout << vertex[path[burh][i] - 1];
+        cout << ",";
     }
+    cout  << "h)";
 
-    cout << "The cost of most efficient tour = " << cost << endl;
-    cout << "Path: ";
-    cout << "1" << " -> ";
-    for (int i = path.size() - 1; i >= 0; i--)
+    return;
+}
+
+int main()
+{
+    string file_names[2] = {"test_2.txt", "test_1.txt"};
+
+    for (int i = 0; i < 2; i++)
     {
-        cout << path[i];
-        if (i != 0)
-            cout << " -> ";
+        cout << "Test " << i + 1 << endl;
+        FindPath(file_names[i]);
+        cout << endl;
     }
-    cout  << " -> "<< "1";
-
-    return 0;
 }
