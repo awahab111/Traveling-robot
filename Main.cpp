@@ -124,31 +124,31 @@ void readfile(int **&adj_matrix, int &vertex_count, int *&vertex_time, int &T_ti
     T_time = stoi(time);
 }
 
-int hamiltonianCycle(int i, int mask, int **adj_matrix, int T_time, int **memoization_table, int vertex_count, int number, vector<int> *&path)
+int hamiltonianCycle(int i, int visited_vertex, int **adj_matrix, int T_time, int **memoization_table, int vertex_count, int number, vector<int> *&path)
 {
-    if (mask == ((1 << i) | 3)){
+    int path_cost = T_time;
+    if (visited_vertex == ((1 << i) | 3)){
         path[number].push_back(1);
         path[number].push_back(i);
         return adj_matrix[1][i];
     }
-    if (memoization_table[i][mask] != 0){
-        return memoization_table[i][mask];
+    if (memoization_table[i][visited_vertex] != 0){
+        return memoization_table[i][visited_vertex];
     }
-    int res = T_time;
     for (int j = 1; j <= vertex_count; j++)
     {
-        if ((mask & (1 << j)) && j != i && j != 1)
+        if ((visited_vertex & (1 << j)) && j != i && j != 1)
         {
-            int subproblem = hamiltonianCycle(j, mask & (~(1 << i)), adj_matrix, T_time, memoization_table, vertex_count, number , path) + adj_matrix[j][i];
-            if (subproblem < res){
-                res = subproblem;
-                path[number].push_back(i);  // Add the current vertex to the path vector.
-                return res;
+            int subproblem = hamiltonianCycle(j, visited_vertex & (~(1 << i)), adj_matrix, T_time, memoization_table, vertex_count, number , path) + adj_matrix[j][i];
+            if (subproblem < path_cost){
+                path_cost = subproblem;
+                path[number].push_back(i);
+                return path_cost;
             }
         }
     }
-    memoization_table[i][mask] = res;
-    return res;
+    memoization_table[i][visited_vertex] = path_cost;
+    return path_cost;
 }
 
 // Calling Funtion
@@ -166,14 +166,14 @@ void FindPath(string file){
     }
     
     // Find the traveling cost
-    int burh = 0;
+    int path_number = 0;
     int cost = T_time;
     for (int i = 1; i <= vertex_count; i++)
     {
         int subproblem = hamiltonianCycle(i, (1 << (vertex_count + 1)) - 1, adj_matrix, T_time, memoization_table , vertex_count, i, path) + adj_matrix[i][1];
         if (subproblem < cost)
             cost = subproblem;
-            burh = i;
+            path_number = i;
     }
     // Find the delivery time
     for(int i = 0; i < vertex_count - 1; i++){delivery_time += vertex_time[i];}
@@ -186,9 +186,9 @@ void FindPath(string file){
 
     cout << "Expected output: (";
     cout << "h" << ",";
-    for (int i = 1; i <= path[burh].size() - 1; i++)
+    for (int i = 1; i <= path[path_number].size() - 1; i++)
     {
-        cout << vertex[path[burh][i] - 1];
+        cout << vertex[path[path_number][i] - 1];
         cout << ",";
     }
     cout  << "h)";
