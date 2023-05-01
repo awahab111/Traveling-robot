@@ -1,8 +1,11 @@
 # Traveling-robot
 ## Introduction 
 From reading and researching about the given question it can be easily said the problem is quite like the travelling salesman problem thus same algorithms can be used to solve this problem.
+
 The travelling salesman problem (TSP) is a well-known combinatorial optimisation problem. The goal is to choose the fastest route that visits each city just once and returns to the starting point.
+
 The TSP is NP-hard, which means that no polynomial-time algorithm exists that can solve it exactly. There are, however, some approximation techniques that can discover a solution that is near to the ideal answer.
+
 ## Approach 
 The basic idea is to use dynamic programming to solve subproblems and store the results in a memoization table. We will start by selecting a starting vertex and then recursively visit all unvisited vertices until all vertices have been visited exactly once. We will also keep track of the minimum cost for each subproblem and store it in our memoization table.
 
@@ -33,12 +36,19 @@ End Function
 
 ## Arguements 
 i: The index of the current vertex.
+
 visited_vertex: A bitmask that indicates which vertices have already been visited.
+
 adj_matrix: The adjacency matrix of the graph.
+
 T_time: The current time.
+
 memoization_table: A table that stores the results of previously solved subproblems.
+
 vertex_count: The number of vertices in the graph.
+
 number: The number of the current path.
+
 path: A vector that stores the vertices in the current path.
 
 
