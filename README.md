@@ -34,7 +34,7 @@ def hamiltonianCycle(i, mask, adj_matrix, T_time , memoization_table,vertex_coun
 End Function
 ```
 
-## Arguements 
+## Arguments 
 i: The index of the current vertex.
 
 visited_vertex: A bitmask that indicates which vertices have already been visited.
